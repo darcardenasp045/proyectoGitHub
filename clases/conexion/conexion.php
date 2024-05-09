@@ -47,6 +47,30 @@ class conexion{
         });
         return $array;
     }
+    //creamos una funcion para obtener los datos de la base de datos ya parseados a utf8
+    public function obtenerDatos($sqlString){
+        $results = $this->conexion->query($sqlString);
+        $resultArray = array();
+        foreach($results as $key){
+            $resultArray[] = $key;
+        }
+        return $this->convertirUTF8($resultArray);
+    }
+    //creamos una funcion donde nos devuelve el numero de registros que se guardaron en la base de datos
+    public function nonQuery($sqlString){
+        $results = $this->conexion->query($sqlString);
+        return $this->conexion->affected_rows;
+    }
+
+    public function nonQueryId($sqlString){
+        $results = $this->conexion->query($sqlString);
+        $filas = $this->conexion->affected_rows;
+        if($filas >= 1){
+            return $this->conexion->insert_id;
+        }else{
+            return 0;
+        }
+    }
 
 
 } 
