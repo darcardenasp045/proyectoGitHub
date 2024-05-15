@@ -61,7 +61,7 @@ class conexion{
         $results = $this->conexion->query($sqlString);
         return $this->conexion->affected_rows;
     }
-
+    //creamos una funcion donde nos devuelve el id del registro que se guardo en la base de datos
     public function nonQueryId($sqlString){
         $results = $this->conexion->query($sqlString);
         $filas = $this->conexion->affected_rows;
@@ -70,6 +70,10 @@ class conexion{
         }else{
             return 0;
         }
+    }
+    //creamos una funcion para encriptar el password
+    protected function encriptar($string){
+        return md5($string);
     }
 
 
