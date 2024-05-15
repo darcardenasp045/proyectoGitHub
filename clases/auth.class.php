@@ -25,7 +25,26 @@ class auth extends conexion{
             // validamos que los datos no esten vacios
             if($datos){
                 if($password == $datos[0]['Password']){
-                    //aun no hay logica aqui
+                    if($datos[0]['Estado'] == "Activo"){
+                        $verificar = $this->insertarToken($datos[0]['UsuarioId']);
+                        if($verificar){
+                            $result = $_respuestas->response;
+                            $result['result'] = array(
+                                "token" => $verificar
+                            );
+                            return $result;
+
+                        }else{
+                            return $_respuestas->error_500("
+                            No hemos podido iniciar sesion, por favor intente nuevamente");
+
+                        }
+                        
+                    }else{
+                        // si el usuario esta inactivo retornamos un error
+                        return $_respuestas->error_200("El usuario esta inactivo");
+
+                    }
                 }else{
                     // si el password es incorrecto retornamos un error
                     return $_respuestas->error_200("El password es invalido");
@@ -50,6 +69,20 @@ class auth extends conexion{
             // si no existen datos retornamos un false
             return 0;        
         }
+    }
+
+    private function insertarToken($UsuarioId){
+        $val = true;
+        $token = bin2hex(openssl_random_pseudo_bytes(16, $val));
+        $date = date("Y-m-d H:i");
+        $estado = "Activo";
+        $query = "INSERT INTO usuarios_token (UsuarioId,Token,Estado,Fecha) VALUES ('$UsuarioId','$token','$estado','$date')"; 
+        $verifica = parent::nonQuery($query);
+        if($verifica){
+            return $token;
+        }else{
+            return 0;
+        }   
     }
 
 }
