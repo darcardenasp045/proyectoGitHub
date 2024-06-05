@@ -27,6 +27,21 @@ class pacientes extends conexion{
         //retornamos los datos
         return ($datos);
 
+        //la url que usamos es esta 
+        //localhost/Proyectos/proyectoGitHub/pacientes?page=1
+
         
     }
+    
+    //esta funcion se encarga de obtener un paciente en especifico
+    public function obtenerPaciente($id){
+        $query = "SELECT * FROM " . 
+        $this->table . " WHERE PacienteId = '$id'";
+        return parent::obtenerDatos($query);
+
+        //la url que usamos es esta
+        //localhost/Proyectos/proyectoGitHub/pacientes?id=1
+    }
+
+
 }

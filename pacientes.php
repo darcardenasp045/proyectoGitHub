@@ -12,6 +12,10 @@ if($_SERVER['REQUEST_METHOD'] == 'GET'){
         $ListaPacientes = $_pacientes->listaPacientes($pagina);
         
         echo json_encode($ListaPacientes);
+    }else if(isset($_GET['id'])){
+        $pacienteId = $_GET['id'];
+        $datosPaciente = $_pacientes->obtenerPaciente($pacienteId);
+        echo json_encode($datosPaciente);
     }
     
 }else if($_SERVER['REQUEST_METHOD'] == 'POST'){
