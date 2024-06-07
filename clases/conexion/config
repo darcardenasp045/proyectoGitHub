@@ -1,10 +1,10 @@
 {
     "conexion":{
-        "server": "localhost",
+        "server": "roundhouse.proxy.rlwy.net",
         "user": "root",
-        "password": "123456",
+        "password": "GihYQqRTGfRkwzYHYDsLlMsosdaQaJyL",
         "database": "apirest",
-        "port": 3306
+        "port": 16526
 
     }
 }

@@ -1,11 +1,15 @@
 <?php
+header("Access-Control-Allow-Origin: http://localhost:5173"); // Permite solicitudes desde este origen
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS"); // Métodos permitidos
+header("Access-Control-Allow-Headers: Content-Type, Authorization"); // Cabeceras permitidas
+
 
 require_once "clases/auth.class.php";
 require_once "clases/respuestas.class.php";
 
 $_auth = new auth();
 
-$_respuestas = new respuesta();
+$_respuestas = new respuestas();
 
 //validamos que el metodo que se este utilizando sea POST
 

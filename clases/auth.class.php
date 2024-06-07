@@ -7,7 +7,7 @@ class auth extends conexion{
     // creamos la funcion para el login de los usuarios    
     public function login($json){
         // instanciamos la clase respuestas
-        $_respuestas = new respuesta;
+        $_respuestas = new respuestas;
         // convertimos el json a un array
         $datos = json_decode($json, true);
         // validamos que existan los datos
