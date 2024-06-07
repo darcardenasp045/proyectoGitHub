@@ -3,7 +3,7 @@
         "server": "roundhouse.proxy.rlwy.net",
         "user": "root",
         "password": "GihYQqRTGfRkwzYHYDsLlMsosdaQaJyL",
-        "database": "apirest",
+        "database": "railway",
         "port": 16526
 
     }
