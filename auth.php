@@ -1,6 +1,6 @@
 <?php
-header("Access-Control-Allow-Origin: https://consumir-api-php.vercel.app");// Permite solicitudes desde este origen
-header("Access-Control-Allow-Origin: http://localhost:5173"); // Permite credenciales
+header("Access-Control-Allow-Origin: *");// Permite solicitudes desde este origen
+// Permite credenciales
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS"); // Métodos permitidos
 header("Access-Control-Allow-Headers: Content-Type, Authorization"); // Cabeceras permitidas
 
