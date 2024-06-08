@@ -5,7 +5,7 @@ require_once "clases/respuestas.class.php";
 
 $_auth = new auth();
 
-$_respuestas = new respuesta();
+$_respuestas = new respuestas();
 
 //validamos que el metodo que se este utilizando sea POST
 
