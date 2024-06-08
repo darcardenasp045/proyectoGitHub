@@ -1,4 +1,8 @@
 <?php
+header("Access-Control-Allow-Origin: http://localhost:5173");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+
 require_once 'clases/respuestas.class.php';
 require_once 'clases/pacientes.class.php';
 
