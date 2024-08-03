@@ -2,7 +2,7 @@
 
 use PHPUnit\Framework\TestCase;
 
-// Asegúrate de incluir el archivo de la clase pacientes
+// Asegúrate de incluir el archivo de la clase pacientes de la clase
 require_once __DIR__ . '/../pacientes.class.php';
 
 class PacientesTest extends TestCase
