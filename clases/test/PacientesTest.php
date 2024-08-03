@@ -2,7 +2,8 @@
 
 use PHPUnit\Framework\TestCase;
 
-require_once 'pacientes.class.php'
+// Asegúrate de incluir el archivo de la clase pacientes
+require_once __DIR__ . '/../pacientes.class.php';
 
 class PacientesTest extends TestCase
 {
@@ -12,72 +13,121 @@ class PacientesTest extends TestCase
 
     protected function setUp(): void
     {
+        // Crear un mock para la clase conexion
         $this->conexionMock = $this->createMock(conexion::class);
+
+        // Crear un mock para la clase respuestas
         $this->respuestasMock = $this->createMock(respuestas::class);
 
-        // Instanciar el objeto Pacientes y pasar los mocks como dependencias
-        $this->pacientes = $this->getMockBuilder(pacientes::class)
-                                ->setConstructorArgs([$this->conexionMock])
-                                ->setMethods(['buscarToken', 'insertarPaciente', 'modificarPaciente', 'eliminarPaciente'])
-                                ->getMock();
+        // Instanciar el objeto Pacientes con los mocks
+        $this->pacientes = new pacientes();
+        $this->pacientes->setConexion($this->conexionMock); // Asegúrate de poder establecer la conexión mockeada
     }
 
     public function testListaPacientes()
     {
+        $pagina = 1;
         $query = "SELECT PacienteId,Nombre,DNI,Telefono,Correo FROM pacientes limit 0,100";
-        $expectedData = [['PacienteId' => 1, 'Nombre' => 'John Doe', 'DNI' => '12345678', 'Telefono' => '123456789', 'Correo' => 'john@example.com']];
-        
+        $datos = [
+            ['PacienteId' => 1, 'Nombre' => 'Juan', 'DNI' => '123456', 'Telefono' => '5551234', 'Correo' => 'juan@example.com']
+        ];
+
         $this->conexionMock->method('obtenerDatos')
                            ->with($query)
-                           ->willReturn($expectedData);
-        
-        $result = $this->pacientes->listaPacientes();
-        $this->assertEquals($expectedData, $result);
+                           ->willReturn($datos);
+
+        $result = $this->pacientes->listaPacientes($pagina);
+        $this->assertEquals($datos, $result);
     }
 
     public function testObtenerPaciente()
     {
         $id = 1;
         $query = "SELECT * FROM pacientes WHERE PacienteId = '$id'";
-        $expectedData = ['PacienteId' => 1, 'Nombre' => 'John Doe'];
-        
+        $datos = ['PacienteId' => 1, 'Nombre' => 'Juan', 'DNI' => '123456', 'Telefono' => '5551234', 'Correo' => 'juan@example.com'];
+
         $this->conexionMock->method('obtenerDatos')
                            ->with($query)
-                           ->willReturn($expectedData);
-        
+                           ->willReturn($datos);
+
         $result = $this->pacientes->obtenerPaciente($id);
-        $this->assertEquals($expectedData, $result);
+        $this->assertEquals($datos, $result);
     }
 
     public function testPostSuccess()
     {
         $json = json_encode([
             'token' => 'valid_token',
-            'nombre' => 'John Doe',
-            'dni' => '12345678',
-            'correo' => 'john@example.com'
+            'nombre' => 'Juan',
+            'dni' => '123456',
+            'correo' => 'juan@example.com'
         ]);
 
+        // Configurar el mock para buscarToken
         $this->pacientes->method('buscarToken')
-                         ->willReturn([['TokenId' => 1, 'UsuarioId' => 1, 'Estado' => 'Activo']]);
-        $this->pacientes->method('insertarPaciente')
-                         ->willReturn(1);
+                        ->willReturn(['TokenId' => 1, 'UsuarioId' => 1, 'Estado' => 'Activo']);
 
-        $expectedResponse = [
-            'status' => 200,
-            'result' => ['pacienteId' => 1]
+        // Configurar el mock para insertarPaciente
+        $this->pacientes->method('insertarPaciente')
+                        ->willReturn(1);
+
+        // Configurar el mock para la respuesta de éxito
+        $this->respuestasMock->response = [
+            'status' => 'success',
+            'result' => [
+                'pacienteId' => 1
+            ]
+        ];
+        $this->pacientes->method('response')
+                        ->willReturn($this->respuestasMock->response);
+
+        // Llamar al método post
+        $result = $this->pacientes->post($json);
+        $expected = [
+            'status' => 'success',
+            'result' => [
+                'pacienteId' => 1
+            ]
         ];
 
-        $this->respuestasMock->method('response')
-                             ->willReturn($expectedResponse);
-        $this->pacientes->method('insertarPaciente')
-                         ->willReturn(1);
+        $this->assertEquals($expected, $result);
+    }
 
-        $this->pacientes->method('error_401')
-                         ->willReturn($this->respuestasMock->error_401());
+    public function testPostFailure()
+    {
+        $json = json_encode([
+            'token' => 'valid_token',
+            'nombre' => 'Juan',
+            'dni' => '123456',
+            'correo' => 'juan@example.com'
+        ]);
 
+        // Configurar el mock para buscarToken
+        $this->pacientes->method('buscarToken')
+                        ->willReturn(false);
+
+        // Configurar el mock para la respuesta de error
+        $this->respuestasMock->response = [
+            'status' => 'error',
+            'result' => [
+                'error_id' => '401',
+                'error_msg' => 'El Token que envio es invalido o ha caducado'
+            ]
+        ];
+        $this->pacientes->method('response')
+                        ->willReturn($this->respuestasMock->response);
+
+        // Llamar al método post
         $result = $this->pacientes->post($json);
-        $this->assertEquals($expectedResponse, $result);
+        $expected = [
+            'status' => 'error',
+            'result' => [
+                'error_id' => '401',
+                'error_msg' => 'El Token que envio es invalido o ha caducado'
+            ]
+        ];
+
+        $this->assertEquals($expected, $result);
     }
 
     public function testPutSuccess()
@@ -85,28 +135,74 @@ class PacientesTest extends TestCase
         $json = json_encode([
             'token' => 'valid_token',
             'pacienteId' => 1,
-            'nombre' => 'John Doe Updated',
-            'dni' => '87654321'
+            'nombre' => 'Juan',
+            'dni' => '123456',
+            'correo' => 'juan@example.com'
         ]);
 
+        // Configurar el mock para buscarToken
         $this->pacientes->method('buscarToken')
-                         ->willReturn([['TokenId' => 1, 'UsuarioId' => 1, 'Estado' => 'Activo']]);
-        $this->pacientes->method('modificarPaciente')
-                         ->willReturn(1);
+                        ->willReturn(['TokenId' => 1, 'UsuarioId' => 1, 'Estado' => 'Activo']);
 
-        $expectedResponse = [
-            'status' => 200,
-            'result' => ['pacienteId' => 1]
+        // Configurar el mock para modificarPaciente
+        $this->pacientes->method('modificarPaciente')
+                        ->willReturn(1);
+
+        // Configurar el mock para la respuesta de éxito
+        $this->respuestasMock->response = [
+            'status' => 'success',
+            'result' => [
+                'pacienteId' => 1
+            ]
+        ];
+        $this->pacientes->method('response')
+                        ->willReturn($this->respuestasMock->response);
+
+        // Llamar al método put
+        $result = $this->pacientes->put($json);
+        $expected = [
+            'status' => 'success',
+            'result' => [
+                'pacienteId' => 1
+            ]
         ];
 
-        $this->respuestasMock->method('response')
-                             ->willReturn($expectedResponse);
+        $this->assertEquals($expected, $result);
+    }
 
-        $this->pacientes->method('error_401')
-                         ->willReturn($this->respuestasMock->error_401());
+    public function testPutFailure()
+    {
+        $json = json_encode([
+            'token' => 'valid_token',
+            'pacienteId' => 1
+        ]);
 
+        // Configurar el mock para buscarToken
+        $this->pacientes->method('buscarToken')
+                        ->willReturn(false);
+
+        // Configurar el mock para la respuesta de error
+        $this->respuestasMock->response = [
+            'status' => 'error',
+            'result' => [
+                'error_id' => '401',
+                'error_msg' => 'El Token que envio es invalido o ha caducado'
+            ]
+        ];
+        $this->pacientes->method('response')
+                        ->willReturn($this->respuestasMock->response);
+
+        // Llamar al método put
         $result = $this->pacientes->put($json);
-        $this->assertEquals($expectedResponse, $result);
+        $expected = [
+            'status' => 'error',
+            'result' => [
+                'error_id' => '401',
+                'error_msg' => 'El Token que envio es invalido o ha caducado'
+            ]
+        ];
+
+        $this->assertEquals($expected, $result);
     }
 
     public function testDeleteSuccess()
@@ -116,23 +212,69 @@ class PacientesTest extends TestCase
             'pacienteId' => 1
         ]);
 
+        // Configurar el mock para buscarToken
         $this->pacientes->method('buscarToken')
-                         ->willReturn([['TokenId' => 1, 'UsuarioId' => 1, 'Estado' => 'Activo']]);
-        $this->pacientes->method('eliminarPaciente')
-                         ->willReturn(1);
+                        ->willReturn(['TokenId' => 1, 'UsuarioId' => 1, 'Estado' => 'Activo']);
 
-        $expectedResponse = [
-            'status' => 200,
-            'result' => ['pacienteId' => 1]
+        // Configurar el mock para eliminarPaciente
+        $this->pacientes->method('eliminarPaciente')
+                        ->willReturn(1);
+
+        // Configurar el mock para la respuesta de éxito
+        $this->respuestasMock->response = [
+            'status' => 'success',
+            'result' => [
+                'pacienteId' => 1
+            ]
+        ];
+        $this->pacientes->method('response')
+                        ->willReturn($this->respuestasMock->response);
+
+        // Llamar al método delete
+        $result = $this->pacientes->delete($json);
+        $expected = [
+            'status' => 'success',
+            'result' => [
+                'pacienteId' => 1
+            ]
         ];
 
-        $this->respuestasMock->method('response')
-                             ->willReturn($expectedResponse);
+        $this->assertEquals($expected, $result);
+    }
 
-        $this->pacientes->method('error_401')
-                         ->willReturn($this->respuestasMock->error_401());
+    public function testDeleteFailure()
+    {
+        $json = json_encode([
+            'token' => 'valid_token',
+            'pacienteId' => 1
+        ]);
 
+        // Configurar el mock para buscarToken
+        $this->pacientes->method('buscarToken')
+                        ->willReturn(false);
+
+        // Configurar el mock para la respuesta de error
+        $this->respuestasMock->response = [
+            'status' => 'error',
+            'result' => [
+                'error_id' => '401',
+                'error_msg' => 'El Token que envio es invalido o ha caducado'
+            ]
+        ];
+        $this->pacientes->method('response')
+                        ->willReturn($this->respuestasMock->response);
+
+        // Llamar al método delete
         $result = $this->pacientes->delete($json);
-        $this->assertEquals($expectedResponse, $result);
+        $expected = [
+            'status' => 'error',
+            'result' => [
+                'error_id' => '401',
+                'error_msg' => 'El Token que envio es invalido o ha caducado'
+            ]
+        ];
+
+        $this->assertEquals($expected, $result);
     }
 }
+?>

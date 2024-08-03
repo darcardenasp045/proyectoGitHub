@@ -3,7 +3,7 @@
 use PHPUnit\Framework\TestCase;
 
 // Importar la clase respuestas que queremos probar.
-require_once __DIR__ . './clases/respuestas.class.php'; 
+require_once __DIR__ . '/../respuestas.class.php'; 
 
 class RespuestasTest extends TestCase
 {

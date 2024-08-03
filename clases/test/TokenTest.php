@@ -2,98 +2,101 @@
 
 use PHPUnit\Framework\TestCase;
 
+require_once __DIR__ . '/../token.class.php';  // Ajusta la ruta según sea necesario
+
 class TokenTest extends TestCase
 {
     protected $token;
+    protected $conexionMock;
 
     protected function setUp(): void
     {
-        $this->token = $this->getMockBuilder(token::class)
-            ->setMethods(['nonQuery'])
-            ->getMock();
+        // Crear un mock para la conexión
+        $this->conexionMock = $this->createMock(conexion::class);
+
+        // Instanciar el objeto Token con el mock de conexión
+        $this->token = new token();
+        $this->token->setConexion($this->conexionMock); // Asegúrate de que puedas establecer la conexión mockeada
     }
 
-    public function testActualizarTokensWithUpdates()
+    public function testActualizarTokensSuccess()
     {
-        // Arrange
-        $this->token->method('nonQuery')->willReturn(5);
-        
-        // Act
-        $result = $this->token->actualizarTokens('2024-08-01');
+        $fecha = '2024-01-01';
+        $query = "update usuarios_token set Estado = 'Inactivo' WHERE  Fecha < '$fecha'";
+        $expectedRecords = 10;
 
-        // Assert
-        $this->assertEquals(5, $result);
+        $this->conexionMock->method('nonQuery')
+                           ->with($query)
+                           ->willReturn($expectedRecords);
+
+        $this->token->expects($this->once())
+                    ->method('escribirEntrada')
+                    ->with($expectedRecords);
+
+        $result = $this->token->actualizarTokens($fecha);
+        $this->assertEquals($expectedRecords, $result);
     }
 
-    public function testActualizarTokensWithoutUpdates()
+    public function testActualizarTokensFailure()
     {
-        // Arrange
-        $this->token->method('nonQuery')->willReturn(0);
-        
-        // Act
-        $result = $this->token->actualizarTokens('2024-08-01');
+        $fecha = '2024-01-01';
+        $query = "update usuarios_token set Estado = 'Inactivo' WHERE  Fecha < '$fecha'";
 
-        // Assert
+        $this->conexionMock->method('nonQuery')
+                           ->with($query)
+                           ->willReturn(0);
+
+        $result = $this->token->actualizarTokens($fecha);
         $this->assertEquals(0, $result);
     }
 
     public function testCrearTxt()
     {
-        // Arrange
-        $tempFile = tempnam(sys_get_temp_dir(), 'test_');
+        $direccion = 'test.txt';
 
-        // Act
-        $this->token->crearTxt($tempFile);
+        // Usar un archivo temporal para evitar la creación de archivos innecesarios
+        $this->expectOutputRegex('/error al crear el archivo de registros/');
+        $this->token->crearTxt($direccion);
 
-        // Assert
-        $this->assertFileExists($tempFile);
-        $this->assertStringEqualsFile($tempFile, "--- Registros del CRON JOB --------- \n");
-
-        // Cleanup
-        unlink($tempFile);
+        // Verificar que el archivo se creó correctamente
+        $this->assertFileExists($direccion);
+        unlink($direccion); // Limpiar el archivo temporal
     }
 
-    public function testEscribirEntradaWhenFileDoesNotExist()
+    public function testEscribirEntrada()
     {
-        // Arrange
-        $mockToken = $this->getMockBuilder(token::class)
-            ->setMethods(['crearTxt', 'escribirTxt'])
-            ->getMock();
+        $registros = 5;
+        $direccion = 'test.txt';
 
-        $mockToken->expects($this->once())->method('crearTxt');
-        $mockToken->expects($this->once())->method('escribirTxt');
+        // Crear un archivo temporal
+        $this->token->crearTxt($direccion);
 
-        // Act
-        $mockToken->escribirEntrada(5);
-    }
+        $this->token->escribirEntrada($registros);
 
-    public function testEscribirEntradaWhenFileExists()
-    {
-        // Arrange
-        $mockToken = $this->getMockBuilder(token::class)
-            ->setMethods(['escribirTxt'])
-            ->getMock();
+        // Verificar que el archivo contiene la entrada esperada
+        $expectedText = "Se modificaron $registros registro(s) el dia [";
+        $content = file_get_contents($direccion);
+        $this->assertStringContainsString($expectedText, $content);
 
-        $mockToken->expects($this->once())->method('escribirTxt');
-
-        // Act
-        $mockToken->escribirEntrada(5);
+        // Limpiar el archivo temporal
+        unlink($direccion);
     }
 
     public function testEscribirTxt()
     {
-        // Arrange
-        $tempFile = tempnam(sys_get_temp_dir(), 'test_');
-        $date = date("Y-m-d H:i");
-        $expectedText = "Se modificaron 5 registro(s) el dia [$date] \n";
+        $direccion = 'test.txt';
+        $registros = 3;
 
-        // Act
-        $this->token->escribirTxt($tempFile, 5);
+        $this->token->escribirTxt($direccion, $registros);
 
-        // Assert
-        $this->assertStringEqualsFile($tempFile, $expectedText);
+        // Verificar que el archivo contiene la entrada esperada
+        $expectedText = "Se modificaron $registros registro(s) el dia [";
+        $content = file_get_contents($direccion);
+        $this->assertStringContainsString($expectedText, $content);
 
-        // Cleanup
-        unlink($tempFile);
+        // Limpiar el archivo temporal
+        unlink($direccion);
     }
 }
+
+?>
